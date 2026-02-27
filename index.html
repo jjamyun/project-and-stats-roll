@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project + Bonus Stats</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Inter+Tight:wght@900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#f5f5f7;
+    --text:#111;
+    --muted:#666;
+    --blue:#0000ff;
+    --orange:#ff7a00;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    height:100vh;
+    overflow:hidden;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter, sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* UI must be ABOVE dice to keep buttons clickable */
+  .ui{
+    position:relative;
+    z-index:50;
+    width:min(720px, calc(100vw - 48px));
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+
+  /* Headline container hidden at start */
+  .headlineWrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+
+    opacity:0;
+    transform: translateY(8px);
+    pointer-events:none;
+
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+  .headlineWrap.show{
+    opacity:1;
+    transform: translateY(0);
+    pointer-events:auto;
+  }
+
+  h1{
+    margin:0;
+    font-size:32px;
+    line-height:1.1;
+    letter-spacing:-0.02em;
+
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+  h2{
+    margin:0;
+    font-size:16px;
+    font-weight:400;
+    color:var(--muted);
+
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+
+  .reveal{
+    opacity:1 !important;
+    transform: translateY(0) !important;
+  }
+
+  /* Result */
+  .resultRow{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:8px;
+    min-height:60px;
+  }
+
+  /* Requested: 18px */
+  .rollLine{
+    font-family:Inter, sans-serif;
+    font-weight:600;
+    font-size:18px;
+    line-height:1.2;
+
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,.9,.2,1);
+  }
+  .rollLine.show{
+    opacity:1;
+    transform: translateY(0);
+  }
+  .rollLine .num{
+    color:var(--blue);
+    font-family:"Inter Tight", Inter, sans-serif;
+    font-weight:900;
+    letter-spacing:-0.02em;
+  }
+
+  /* Requested: 12px */
+  .buff{
+    font-size:12px;
+    color:var(--muted);
+    max-width: 62ch;
+
+    opacity:0;
+    transform: translateY(6px);
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+  .buff.show{
+    opacity:1;
+    transform: translateY(0);
+  }
+
+  /* Buttons */
+  .primaryBtn, .smallBtn{
+    border:none;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:600;
+    transition: transform 140ms cubic-bezier(.2,.9,.2,1), filter 140ms ease, opacity 200ms ease;
+    user-select:none;
+  }
+
+  .primaryBtn{
+    padding:14px 28px;
+    font-size:16px;
+    background:#000;
+    color:#fff;
+  }
+
+  /* stacked buttons */
+  .smallCol{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    margin-top:8px;
+
+    opacity:0;
+    transform: translateY(10px);
+    pointer-events:none;
+
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+  .smallCol.show{
+    opacity:1;
+    transform: translateY(0);
+    pointer-events:auto;
+  }
+
+  .smallBtn{
+    padding:10px 16px;
+    font-size:13px;
+    width: 200px;
+    max-width: calc(100vw - 96px);
+    background: #E0E0E3;
+    color:#111;
+
+    opacity:0;
+    transform: translateY(0px);
+    transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.9,.2,1);
+  }
+  .smallBtn.revealBtn{
+    opacity:1;
+    transform: translateY(8);
+    transition: opacity 500ms ease, transform 500ms cubic-bezier(.2,.9,.2,1);
+  }
+
+  .smallBtn.blue{ background: var(--blue); color:#fff; }
+  .smallBtn.orange{ background: var(--orange); color:#fff; }
+
+  .primaryBtn:active,
+  .smallBtn:active{
+    transform: scale(0.965);
+    filter: brightness(0.98);
+  }
+
+  /* Dice scene under UI so buttons stay clickable */
+  .scene{
+    position:absolute;
+    inset:0;
+    z-index:20;
+    /* IMPORTANT: start as none so it never blocks Select Project */
+    pointer-events:none;
+    perspective:none;
+  }
+
+  .cube{
+    position:absolute;
+    transform-style:preserve-3d;
+    transform-origin:center;
+    /* IMPORTANT: allow clicks to reach face1 */
+    pointer-events:auto;
+  }
+  .cube-inner{
+    position:relative;
+    transform-style:preserve-3d;
+  }
+  .face{
+    position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #ddd;
+    backface-visibility:hidden;
+
+    /* only face1 clickable */
+    pointer-events:none;
+
+    font-family:"Inter Tight", Inter, sans-serif;
+    font-weight:900;
+  }
+
+  .face1{
+    background:#fff;
+    pointer-events:auto;
+    cursor:pointer;
+  }
+  .face2{ background:#d8d8d8; }
+  .face3{ background:#c8c8c8; }
+  .face4{ background:#b8b8b8; }
+  .face5{ background:#a8a8a8; }
+  .face6{ background:#999999; }
+</style>
+</head>
+
+<body>
+  <div class="ui">
+    <div id="headlineWrap" class="headlineWrap">
+      <h1 id="title"></h1>
+      <h2 id="subtitle"></h2>
+
+      <div class="resultRow">
+        <div id="rollLine" class="rollLine"></div>
+        <div id="buff" class="buff"></div>
+      </div>
+    </div>
+
+    <button id="selectBtn" class="primaryBtn">Select Project</button>
+
+    <div id="actions" class="smallCol">
+      <button id="rerollProjectBtn" class="smallBtn">Reroll Project</button>
+      <button id="rollStatsBtn" class="smallBtn blue">Roll for Bonus Stats</button>
+    </div>
+  </div>
+
+  <div class="scene" id="scene"></div>
+
+<script>
+  // -----------------------------
+  // Config
+  // -----------------------------
+  const REVEAL_DELAY_PROJECT_MS = 500;   // .5s delay after click Select Project
+  const STAGGER_H1_H2_MS = 150;
+  const AFTER_SUBTITLE_MS = 5000; // delay after subtitle before buttons animate
+  const STAGGER_BTN_MS = 180; // gap between reroll and roll buttons
+  const RESULT_AFTER_LAND_MS = 1000;     // show roll line after dice land (approx delay)
+  const RESULT_FADE_OUT_MS = 160;
+
+  // -----------------------------
+  // Data
+  // -----------------------------
+  const projects = [
+    { name: "Agusta Star Print", type: "Arts & Crafts" },
+    { name: "Stream Overlay", type: "Design & Code" },
+    { name: "Casiguran Stars", type: "Arts & Crafts" },
+    { name: "ATBP Booth", type: "ATBP Projects" },
+    { name: "ATBP Postcards", type: "ATBP Projects" },
+    { name: "ATBP Stickers", type: "ATBP Projects" },
+    { name: "Room Stickers", type: "Street Art" },
+    { name: "Apple Compund Wall", type: "Street Art" },
+    { name: "PSD Posters", type: "Street Art" },
+    { name: "Graffiti Pitch Deck", type: "Street Art" },
+    { name: "PWD Card Design", type: "City Hall Projects" },
+    { name: "Senior Citizen Card Design", type: "City Hall Projects" },
+    { name: "Posts Edit", type: "Social Media" },
+    { name: "Hike Shots", type: "Social Media" },
+    { name: "Fluffy Egg Jammy Yolk", type: "Cooking" },
+    { name: "Butter Chicken ni Dione", type: "Cooking" },
+    { name: "Sinigang ni Alyo", type: "Cooking" },
+    { name: "Mediterranean ni Annel", type: "Cooking" },
+    { name: "Pandecoco", type: "Cooking" },
+    { name: "Material Study", type: "DOST" },
+    { name: "DIY Furniture Book", type: "Recycling" },
+    { name: "Recycled Pots", type: "Recycling" },
+    { name: "Recycled Paper", type: "Recycling" },
+    { name: "OLPS Repaint", type: "Street Art" },
+    { name: "Blender Study", type: "Study" },
+    { name: "Kanji Practice", type: "Study" },
+    { name: "Japanese Listening Training", type: "Study" },
+    { name: "Ginebra Illustration", type: "Illustration" },
+    { name: "Youra Drawing", type: "Illustration" },
+    { name: "Pants Jacket", type: "Recycling" },
+    { name: "Video Portraits", type: "Social Media" },
+    { name: "Castella", type: "Cooking" },
+    { name: "DM Skulls", type: "Arts & Crafts" },
+    { name: "Ham Room Renovate", type: "Arts & Crafts" },
+    { name: "Clair Obscur", type: "Gaming" },
+    { name: "Animal Well", type: "Gaming" },
+    { name: "Monster Hunter Wilds", type: "Gaming" },
+    { name: "Hades 2", type: "Gaming" },
+    { name: "Disco Elysium", type: "Gaming" },
+    { name: "Soulframe", type: "Gaming" },
+  ];
+
+  const buffByTotal = {
+    6:{title:"Extreme Luck",desc:"Starting anything is a good decision today."},
+    7:{title:"Lucky 7",desc:"+7 Luck every time you see the number 7."},
+    8:{title:"Balanced Brain",desc:"Studying or Creating will make you feel achieved."},
+    9:{title:"UYU's Blessing",desc:"Petting UYU and AYA adds 10 to all base stats. Playing with UYU and AYA multiplies stats by 9."},
+    10:{title:"Perseverance Power",desc:"Anything you start you will endure through."},
+    11:{title:"+111 Stamina",desc:"You can do more stuff today."},
+    12:{title:"Midnight Rest Reset",desc:"Taking a quick nap allows you to re-roll"},
+    13:{title:"Baker's Luck",desc:"Eating bread will increase all base stats by 100"},
+    14:{title:"Kaitou's Charm",desc:"Charisma checks are easier by 80%"},
+    15:{title:"Lucky Strawberry",desc:"x15 Luck if you eat a strawberry"},
+    16:{title:"Sugar Rush",desc:"Eating something sweet"},
+    17:{title:"Laplace's Guidance",desc:"Studying today will be easier. Laplace guides you through."},
+    18:{title:"Limit Break",desc:"It will be easier to make a breakthrough today."},
+    19:{title:"+9999 Health",desc:"If you feel sick, you'll recover in a day. If you feel healthy, you'll be healthy again the next day."},
+    20:{title:"Moo Moo Magic",desc:"Your partner multiplies all stats by 2 for every message."},
+    21:{title:"Nobody's Masterpiece",desc:"Making art-related actions will increase all stats by 20."},
+    22:{title:"Critical Game",desc:"You'll be great at all the games you play today. Increased effect every hour."},
+    23:{title:"10,000 Hour Curse",desc:"Practicing anything cuts down mastery by 50%."},
+    24:{title:"Knight King's Virtue",desc:"No need to ask for anything in return today. Do it for the world."},
+    25:{title:"Black☆Star's Drive",desc:"Resist all debuffs. Max Chuunibyou in Effect."},
+    26:{title:"Michelin Might",desc:"Eating three full meals will max out your stats for 2 hours after eating."},
+    27:{title:"Excalibur's Defiance",desc:"You will have your way. Just walk steadily."},
+    28:{title:"Eat the Frog",desc:"Finishing your biggest task, will make you enter flow state."},
+    29:{title:"Arcana Ascension",desc:"Elevated clarity across creativity, focus, and drive."},
+    30:{title:"Death Arcana Calm",desc:"Comfort with uncertainty; reduced anxiety volatility."},
+    31:{title:"Showtime Trigger",desc:"Flow state entry threshold lowered."},
+    32:{title:"Serendipity Gate",desc:"High-value opportunity appears without forced effort."},
+    33:{title:"Soul Resonance",desc:"Effort and identity feel strongly synchronized."},
+    34:{title:"Grace State",desc:"Everything feels right. Everything will be okay."},
+    35:{title:"Flow State",desc:"Multi-domain amplification luck, focus, perseverance."},
+    36:{title:"Immortality",desc:"No psychological damage taken. No critical failures possible."},
+  };
+
+  // -----------------------------
+  // UI
+  // -----------------------------
+  const headlineWrap = document.getElementById("headlineWrap");
+  const titleEl = document.getElementById("title");
+  const subtitleEl = document.getElementById("subtitle");
+
+  const rollLineEl = document.getElementById("rollLine");
+  const buffEl = document.getElementById("buff");
+
+  const selectBtn = document.getElementById("selectBtn");
+  const actions = document.getElementById("actions");
+  const rerollProjectBtn = document.getElementById("rerollProjectBtn");
+  const rollStatsBtn = document.getElementById("rollStatsBtn");
+
+  // -----------------------------
+  // State
+  // -----------------------------
+  let projectChosen = false;
+  const PROJECT_REROLL_MAX = 3;
+  let projectRerollsLeft = 3;
+
+  let statsRolled = false;
+  const STATS_REROLL_MAX = 3;
+  let statsRerollsLeft = 3;
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function clearResultImmediate(){
+    rollLineEl.classList.remove("show");
+    buffEl.classList.remove("show");
+    rollLineEl.innerHTML = "";
+    buffEl.textContent = "";
+  }
+
+  function fadeOutResult(){
+    rollLineEl.classList.remove("show");
+    buffEl.classList.remove("show");
+  }
+
+  function showResultAfterDelay(total){
+    const info = buffByTotal[total] || {title:"",desc:""};
+    rollLineEl.innerHTML = `You rolled <span class="num">${total}</span> for your bonus stats`;
+    buffEl.textContent = `${info.title} — ${info.desc}`;
+
+    setTimeout(()=>{
+      rollLineEl.classList.add("show");
+      buffEl.classList.add("show");
+    }, RESULT_AFTER_LAND_MS);
+  }
+
+  function updateButtons(){
+    // Project reroll
+    if (projectRerollsLeft <= 0) {
+      rerollProjectBtn.textContent = "No Project Rolls Left";
+      rerollProjectBtn.disabled = true;
+      rerollProjectBtn.style.opacity = 0.45;
+    } else {
+      rerollProjectBtn.textContent = `Reroll Project ${projectRerollsLeft}/${PROJECT_REROLL_MAX}`;
+      rerollProjectBtn.disabled = false;
+      rerollProjectBtn.style.opacity = 1;
+    }
+
+    // Stats button
+    if(!statsRolled){
+      rollStatsBtn.textContent = "Roll for Bonus Stats";
+      rollStatsBtn.classList.remove("orange");
+      rollStatsBtn.classList.add("blue");
+      rollStatsBtn.disabled = false;
+      rollStatsBtn.style.opacity = 1;
+    } else {
+      if (statsRerollsLeft <= 0) {
+        rollStatsBtn.textContent = "No Bonus Stats Rolls Left";
+        rollStatsBtn.disabled = true;
+        rollStatsBtn.style.opacity = 0.45;
+      } else {
+        rollStatsBtn.textContent = `Reroll Stats ${statsRerollsLeft}/${STATS_REROLL_MAX}`;
+        rollStatsBtn.disabled = false;
+        rollStatsBtn.style.opacity = 1;
+      }
+      rollStatsBtn.classList.remove("blue");
+      rollStatsBtn.classList.add("orange");
+    }
+  }
+
+  function pickProject(){
+    const r = Math.floor(Math.random()*projects.length);
+    const p = projects[r];
+    titleEl.textContent = p.name;
+    subtitleEl.textContent = p.type;
+  }
+
+  // -----------------------------
+  // UI Reveal sequence
+  // -----------------------------
+  function startJourney(){
+    projectChosen = true;
+    pickProject();
+    clearResultImmediate();
+    updateButtons();
+
+    // Hide CTA button
+    selectBtn.style.display = "none";
+
+    // Reveal after .5s
+    setTimeout(() => {
+  headlineWrap.classList.add("show");
+
+  // Headline then subheadline
+  setTimeout(() => titleEl.classList.add("reveal"), 0);
+  setTimeout(() => subtitleEl.classList.add("reveal"), STAGGER_H1_H2_MS);
+
+  // Show button column immediately (container)
+  actions.classList.add("show");
+
+  // Buttons appear AFTER subheadline + AFTER_SUBTITLE_MS
+  const buttonsStart = STAGGER_H1_H2_MS + AFTER_SUBTITLE_MS;
+
+  setTimeout(() => rerollProjectBtn.classList.add("revealBtn"), buttonsStart);
+  setTimeout(() => rollStatsBtn.classList.add("revealBtn"), buttonsStart + STAGGER_BTN_MS);
+
+}, REVEAL_DELAY_PROJECT_MS);
+  }
+
+  // -----------------------------
+  // Dice System
+  // -----------------------------
+  const scene = document.getElementById("scene");
+
+  // start OFF so nothing blocks UI
+  scene.style.pointerEvents = "none";
+
+  const diceScales = [1, 1, 1.5, 2, 3, 2];
+
+  const occupied = new Map(); // id -> {cx,cy,r}
+  function getRadius(size){
+    const halfDiag = Math.sqrt(2) * (size/2);
+    const padding = Math.max(18, size * 0.26);
+    return halfDiag + padding;
+  }
+  function collides(cx, cy, r, ignoreId){
+    for(const [id, o] of occupied.entries()){
+      if(id === ignoreId) continue;
+      const dx = cx - o.cx;
+      const dy = cy - o.cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist < (r + o.r)) return true;
+    }
+    return false;
+  }
+  function pickSafeLanding(size, ignoreId){
+    const r = getRadius(size);
+    const edge = Math.max(12, size*0.12);
+
+    const minCX = edge + size/2;
+    const maxCX = Math.max(minCX, window.innerWidth - edge - size/2);
+    const minCY = edge + size/2;
+    const maxCY = Math.max(minCY, window.innerHeight - edge - size/2);
+
+    let cx=minCX, cy=minCY, tries=0;
+    do{
+      cx = minCX + Math.random()*(maxCX - minCX);
+      cy = minCY + Math.random()*(maxCY - minCY);
+      tries++;
+      if(tries > 260) break;
+    } while(collides(cx, cy, r, ignoreId));
+
+    return { x: cx - size/2, y: cy - size/2, cx, cy, r };
+  }
+
+  function easeInOut(t){ return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function shuffledDiceNumbers(topFace){
+    const numbers=[1,2,3,4,5,6];
+    const other=numbers.filter(n=>n!==topFace);
+    for(let i=other.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [other[i],other[j]]=[other[j],other[i]];
+    }
+    return [topFace, ...other];
+  }
+
+  function buildCube(scale, id){
+    const cube = document.createElement("div");
+    cube.className = "cube";
+    cube.dataset.id = String(id);
+    cube.dataset.animating = "0";
+
+    const size = 100*scale;
+    cube.dataset.size = String(size);
+    cube.dataset.scale = String(scale);
+
+    cube.style.width = size + "px";
+    cube.style.height = size + "px";
+
+    const inner = document.createElement("div");
+    inner.className = "cube-inner";
+    inner.style.width = size + "px";
+    inner.style.height = size + "px";
+
+    const z = size/2;
+    const transforms = [
+      `rotateY(0deg) translateZ(${z}px)`,
+      `rotateY(180deg) translateZ(${z}px)`,
+      `rotateX(90deg) translateZ(${z}px)`,
+      `rotateX(-90deg) translateZ(${z}px)`,
+      `rotateY(90deg) translateZ(${z}px)`,
+      `rotateY(-90deg) translateZ(${z}px)`
+    ];
+
+    const faces = [];
+    let topFaceEl = null;
+
+    for(let i=0;i<6;i++){
+      const face = document.createElement("div");
+      face.className = `face face${i+1}`;
+      face.style.width = size + "px";
+      face.style.height = size + "px";
+      face.style.transform = transforms[i];
+      face.style.fontSize = (36*scale) + "px";
+      face.textContent = "";
+      inner.appendChild(face);
+      faces.push(face);
+      if(i === 0) topFaceEl = face;
+    }
+
+    cube.appendChild(inner);
+    scene.appendChild(cube);
+
+    return { cube, faces, topFaceEl, size, scale, id };
+  }
+
+  const dice = diceScales.map((s, idx) => buildCube(s, idx+1));
+  let diceHaveEntered = false;
+
+  function parkDiceOffscreen(){
+    occupied.clear();
+    for(const d of dice){
+      const startX = Math.random() * window.innerWidth;
+      const startY = -d.size - 220;
+      d.cube.style.transform = `translate(${startX}px, ${startY}px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
+      d.cube.dataset.animating = "0";
+    }
+    diceHaveEntered = false;
+    // keep scene non-interactive until dice enter
+    scene.style.pointerEvents = "none";
+  }
+
+  function setDieNumbers(die, topValue){
+    const nums = shuffledDiceNumbers(topValue);
+    for(let i=0;i<6;i++){
+      die.faces[i].textContent = String(nums[i]);
+    }
+  }
+
+  function animateDieToNewSpot(die){
+    if(die.cube.dataset.animating === "1") return;
+    die.cube.dataset.animating = "1";
+
+    const landing = pickSafeLanding(die.size, die.id);
+
+    const rect = die.cube.getBoundingClientRect();
+    const startX = rect.left;
+    const startY = rect.top;
+
+    const startRot = { x:Math.random()*1080, y:Math.random()*1080, z:Math.random()*360 };
+    const endRot   = { x:360*(1+Math.floor(Math.random()*3)), y:360*(1+Math.floor(Math.random()*3)), z:Math.random()*360 };
+
+    const duration = 1400 + Math.random()*200;
+    const startTime = performance.now();
+
+    function step(now){
+      const t = Math.min((now-startTime)/duration, 1);
+      const e = easeInOut(t);
+
+      const x = startX + (landing.x - startX)*e;
+      const yBase = startY + (landing.y - startY)*e;
+      const bounce = Math.sin(e*Math.PI) * 15 * die.scale * (1-e);
+      const y = yBase - bounce;
+
+      const rx = startRot.x + (endRot.x - startRot.x)*e;
+      const ry = startRot.y + (endRot.y - startRot.y)*e;
+      const rz = startRot.z + (endRot.z - startRot.z)*e;
+
+      die.cube.style.transform = `translate(${x}px, ${y}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+
+      if(t < 1){
+        requestAnimationFrame(step);
+      } else {
+        occupied.set(die.id, { cx: landing.cx, cy: landing.cy, r: landing.r });
+        die.cube.dataset.animating = "0";
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function roll6d6(){
+    const values = [];
+    for(let i=0;i<6;i++) values.push(1 + Math.floor(Math.random()*6));
+    for(let i=0;i<dice.length;i++) setDieNumbers(dice[i], values[i]);
+    return values.reduce((a,b)=>a+b, 0);
+  }
+
+  // Clickable dice AFTER entry: click white face to re-roll position
+  for(const d of dice){
+    d.topFaceEl.addEventListener("click", (ev)=>{
+      ev.stopPropagation();
+      if(!diceHaveEntered) return;
+      animateDieToNewSpot(d);
+    });
+  }
+
+  function animateAllDiceIn(){
+    occupied.clear();
+    let delay = 0;
+    for(const d of dice){
+      setTimeout(()=>animateDieToNewSpot(d), delay);
+      delay += 80 + Math.random()*80;
+    }
+  }
+
+  // -----------------------------
+  // Stats roll logic + delayed result reveal
+  // -----------------------------
+  function rollStats(){
+    if(!projectChosen) return;
+
+    if(statsRolled){
+      if(statsRerollsLeft <= 0) return;
+      statsRerollsLeft--;
+    } else {
+      statsRolled = true;
+      statsRerollsLeft = STATS_REROLL_MAX;
+    }
+
+    updateButtons();
+
+    // fade out current result before re-roll
+    fadeOutResult();
+
+    // choose numbers immediately (so no lag)
+    const total = roll6d6();
+
+    // first roll: enable scene clicks for dice faces
+    if(!diceHaveEntered){
+      diceHaveEntered = true;
+      scene.style.pointerEvents = "auto";
+      animateAllDiceIn();
+    } else {
+      // reroll: animate dice again to new safe positions
+      animateAllDiceIn();
+    }
+
+    // show result AFTER dice land (approx)
+    // also ensures it fades out/in on reroll
+    setTimeout(()=>{
+      showResultAfterDelay(total);
+    }, RESULT_FADE_OUT_MS);
+  }
+
+  // -----------------------------
+  // Wiring
+  // -----------------------------
+  selectBtn.addEventListener("click", startJourney);
+
+  rerollProjectBtn.addEventListener("click", ()=>{
+    if(projectRerollsLeft <= 0) return;
+    projectRerollsLeft--;
+    pickProject();
+    updateButtons();
+  });
+
+  rollStatsBtn.addEventListener("click", rollStats);
+
+  // -----------------------------
+  // Init
+  // -----------------------------
+  titleEl.textContent = "";
+  subtitleEl.textContent = "";
+  clearResultImmediate();
+  updateButtons();
+  parkDiceOffscreen();
+
+  window.addEventListener("resize", ()=>{
+    // keep it stable: park dice offscreen; next stats roll will re-enter cleanly
+    parkDiceOffscreen();
+  });
+</script>
+</body>
+</html>
