@@ -33,20 +33,36 @@
     color:var(--text);
     font-family:Inter, sans-serif;
     display:flex;
-    align-items:center;
+    align-items:stretch;
     justify-content:center;
   }
 
   /* UI must be ABOVE dice to keep buttons clickable */
   .ui{
-    position:relative;
+    position:fixed;
+    inset:0;
     z-index:50;
-    width:min(720px, calc(100vw - 48px));
-    text-align:center;
+
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:14px;
+    justify-content:center;
+
+    padding:24px;
+    text-align:center;
+  } 
+  
+
+    .bottomDock{
+      position:fixed;
+      left:50%;
+      bottom:24px;
+      transform:translateX(-50%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:14px;
+      z-index:60;
   }
 
   /* Headline container hidden at start */
@@ -55,6 +71,17 @@
     flex-direction:column;
     align-items:center;
     gap:6px;
+
+    /* NEW: card look */
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 18px;
+    padding: 24px 24px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    
+    width:100%;
+    max-width: 400px;
+    width: min(92vw, 560px);
 
     opacity:0;
     transform: translateY(8px);
@@ -100,7 +127,7 @@
     flex-direction:column;
     gap:8px;
     margin-top:8px;
-    min-height:60px;
+    /* remove min-height:60px; */
   }
 
   /* Requested: 18px */
@@ -266,12 +293,14 @@
       </div>
     </div>
 
+    <div class="bottomDock">
     <button id="selectBtn" class="primaryBtn">Select Project</button>
 
     <div id="actions" class="smallCol">
       <button id="rerollProjectBtn" class="smallBtn">Reroll Project</button>
       <button id="rollStatsBtn" class="smallBtn blue">Roll for Bonus Stats</button>
     </div>
+  </div>
   </div>
 
   <div class="scene" id="scene"></div>
@@ -417,14 +446,31 @@
     buffEl.classList.remove("show");
   }
 
+  function hideCard(){
+    headlineWrap.classList.remove("show");
+    titleEl.classList.remove("reveal");
+    subtitleEl.classList.remove("reveal");
+  }
+
+  function showCard(){
+    headlineWrap.classList.add("show");
+    // re-run the staggered reveal
+    setTimeout(() => titleEl.classList.add("reveal"), 0);
+    setTimeout(() => subtitleEl.classList.add("reveal"), STAGGER_H1_H2_MS);
+  }
+
   function showResultAfterDelay(total){
     const info = buffByTotal[total] || {title:"",desc:""};
     rollLineEl.innerHTML = `You rolled <span class="num">${total}</span> for your bonus stats`;
     buffEl.textContent = `${info.title} — ${info.desc}`;
 
+    animateCardResize(); // NEW: animate to new height
+
     setTimeout(()=>{
       rollLineEl.classList.add("show");
       buffEl.classList.add("show");
+
+      animateCardResize(); // NEW: in case reveal affects layout on some browsers
     }, RESULT_AFTER_LAND_MS);
   }
 
@@ -462,6 +508,41 @@
     }
   }
 
+
+  function animateCardResize(){
+      // Only animate when the card is visible
+      if(!headlineWrap.classList.contains("show")) return;
+
+      const from = headlineWrap.getBoundingClientRect().height;
+
+      // lock current height
+      headlineWrap.style.height = from + "px";
+      headlineWrap.style.overflow = "hidden";
+
+      requestAnimationFrame(() => {
+        // let it take natural height, measure, then animate to it
+        headlineWrap.style.height = "auto";
+        const to = headlineWrap.getBoundingClientRect().height;
+
+        headlineWrap.style.height = from + "px";
+        headlineWrap.offsetHeight; // force reflow
+
+        headlineWrap.style.transition = "height 220ms cubic-bezier(.2,.9,.2,1)";
+        headlineWrap.style.height = to + "px";
+
+        const done = () => {
+          headlineWrap.style.transition = "";
+          headlineWrap.style.height = "";
+          headlineWrap.style.overflow = "";
+          headlineWrap.removeEventListener("transitionend", done);
+        };
+        headlineWrap.addEventListener("transitionend", done);
+      });
+    }
+
+
+
+
   function pickProject(){
     const r = Math.floor(Math.random()*projects.length);
     const p = projects[r];
@@ -470,7 +551,8 @@
   }
   function isMobile(){
   return window.innerWidth <= 768;
-}
+  }
+
 
   // -----------------------------
   // UI Reveal sequence
@@ -569,7 +651,7 @@
     cube.dataset.animating = "0";
 
     const baseSize = 100 * scale;
-    const size = isMobile() ? baseSize * 0.5 : baseSize;
+    const size = isMobile() ? baseSize * 0.6 : baseSize;
     cube.dataset.size = String(size);
     cube.dataset.scale = String(scale);
 
@@ -747,10 +829,28 @@
   selectBtn.addEventListener("click", startJourney);
 
   rerollProjectBtn.addEventListener("click", ()=>{
+    if(!projectChosen) return;
     if(projectRerollsLeft <= 0) return;
+
     projectRerollsLeft--;
-    pickProject();
     updateButtons();
+
+    // hide current card, then swap content, then show again
+    hideCard();
+
+    // match your CSS transition (~240ms) :contentReference[oaicite:4]{index=4}
+    setTimeout(() => {
+      pickProject();
+
+      // keep stats if already rolled (your current content stays in DOM)
+      // if you want stats to reset on project reroll, uncomment below:
+      // statsRolled = false;
+      // statsRerollsLeft = STATS_REROLL_MAX;
+      // clearResultImmediate();
+      // updateButtons();
+
+      showCard();
+    }, 260);
   });
 
   rollStatsBtn.addEventListener("click", rollStats);
