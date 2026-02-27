@@ -331,6 +331,15 @@
     { name: "Hades 2", type: "Gaming" },
     { name: "Disco Elysium", type: "Gaming" },
     { name: "Soulframe", type: "Gaming" },
+    { name: "Custom Keychains", type: "Arts & Crafts" },
+    { name: "Concept Design for Manga", type: "Concept Design" },
+    { name: "Flower Design", type: "Concept Design" },
+    { name: "Butterfly Design", type: "Concept Design" },
+    { name: "Insect Design", type: "Concept Design" },
+    { name: "MH Wilds Character Draw", type: "Illustration" },
+    { name: "Graphic Design Practice", type: "Study" },
+    { name: "Animate for Stories", type: "Design & Code" },
+    { name: "Date Plan", type: "Arts & Crafts" },
   ];
 
   const buffByTotal = {
@@ -560,7 +569,7 @@
     cube.dataset.animating = "0";
 
     const baseSize = 100 * scale;
-    const size = isMobile() ? baseSize * 0.6 : baseSize;
+    const size = isMobile() ? baseSize * 0.5 : baseSize;
     cube.dataset.size = String(size);
     cube.dataset.scale = String(scale);
 
