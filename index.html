@@ -56,12 +56,12 @@
     .bottomDock{
       position:fixed;
       left:50%;
-      bottom:24px;
+      bottom:44px; /* 24 + 20 */
       transform:translateX(-50%);
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:14px;
+      gap:18px;
       z-index:60;
   }
 
@@ -81,8 +81,8 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     
     width:100%;
-    max-width: 400px;
-    width: min(92vw, 560px);
+    max-width: 380px;
+    width: min(92vw, 380px);
 
     opacity:0;
     transform: translateY(8px);
@@ -208,7 +208,7 @@
 
   .smallBtn{
     padding:10px 16px;
-    font-size:13px;
+    font-size:14px;
     width: 200px;
     max-width: calc(100vw - 96px);
     background: #E0E0E3;
@@ -375,34 +375,34 @@
   const buffByTotal = {
     6:{title:"Extreme Luck",desc:"Starting anything is a good decision today."},
     7:{title:"Lucky 7",desc:"+7 Luck every time you see the number 7."},
-    8:{title:"Balanced Brain",desc:"Studying or Creating will make you feel achieved."},
+    8:{title:"Balanced Brain",desc:"Left brain and right brain are in sync. Creating or Studying will go well today."},
     9:{title:"UYU's Blessing",desc:"Petting UYU and AYA adds 10 to all base stats. Playing with UYU and AYA multiplies stats by 9."},
-    10:{title:"Perseverance Power",desc:"Anything you start you will endure through."},
-    11:{title:"+111 Stamina",desc:"You can do more stuff today."},
-    12:{title:"Midnight Rest Reset",desc:"Taking a quick nap allows you to re-roll"},
-    13:{title:"Baker's Luck",desc:"Eating bread will increase all base stats by 100"},
-    14:{title:"Kaitou's Charm",desc:"Charisma checks are easier by 80%"},
+    10:{title:"Perseverance Power",desc:"Anything you start, you will endure."},
+    11:{title:"+111 Stamina",desc:"You can do more today."},
+    12:{title:"Midnight Rest Reset",desc:"Taking a quick nap allows you to re-roll and add to your bonus stats."},
+    13:{title:"Baker's Luck",desc:"Eating bread will increase all base stats by 100."},
+    14:{title:"Kaitou's Charm",desc:"Charisma checks are easier by 80%."},
     15:{title:"Lucky Strawberry",desc:"x15 Luck if you eat a strawberry"},
-    16:{title:"Sugar Rush",desc:"Eating something sweet"},
+    16:{title:"Sugar Rush",desc:"Every sweet treat will increase energy by 8%."},
     17:{title:"Laplace's Guidance",desc:"Studying today will be easier. Laplace guides you through."},
     18:{title:"Limit Break",desc:"It will be easier to make a breakthrough today."},
     19:{title:"+9999 Health",desc:"If you feel sick, you'll recover in a day. If you feel healthy, you'll be healthy again the next day."},
     20:{title:"Moo Moo Magic",desc:"Your partner multiplies all stats by 2 for every message."},
-    21:{title:"Nobody's Masterpiece",desc:"Making art-related actions will increase all stats by 20."},
-    22:{title:"Critical Game",desc:"You'll be great at all the games you play today. Increased effect every hour."},
-    23:{title:"10,000 Hour Curse",desc:"Practicing anything cuts down mastery by 50%."},
+    21:{title:"Nobody's Masterpiece",desc:"Taking art-related actions will increase all stats by 20%."},
+    22:{title:"Critical Game",desc:"You'll be great at all the games you play today. Effect increases every hour."},
+    23:{title:"10,000 Hour Curse",desc:"Practicing anything cuts down mastery time by 50%."},
     24:{title:"Knight King's Virtue",desc:"No need to ask for anything in return today. Do it for the world."},
-    25:{title:"Black☆Star's Drive",desc:"Resist all debuffs. Max Chuunibyou in Effect."},
+    25:{title:"Black☆Star's Drive",desc:"Resist all debuffs. Max Chuunibyou in effect."},
     26:{title:"Michelin Might",desc:"Eating three full meals will max out your stats for 2 hours after eating."},
     27:{title:"Excalibur's Defiance",desc:"You will have your way. Just walk steadily."},
-    28:{title:"Eat the Frog",desc:"Finishing your biggest task, will make you enter flow state."},
+    28:{title:"Eat the Frog",desc:"Finishing your biggest task will make you enter a flow state."},
     29:{title:"Arcana Ascension",desc:"Elevated clarity across creativity, focus, and drive."},
     30:{title:"Death Arcana Calm",desc:"Comfort with uncertainty; reduced anxiety volatility."},
     31:{title:"Showtime Trigger",desc:"Flow state entry threshold lowered."},
     32:{title:"Serendipity Gate",desc:"High-value opportunity appears without forced effort."},
-    33:{title:"Soul Resonance",desc:"Effort and identity feel strongly synchronized."},
+    33:{title:"Soul Resonance",desc:"Effort and identity are strongly synchronized."},
     34:{title:"Grace State",desc:"Everything feels right. Everything will be okay."},
-    35:{title:"Flow State",desc:"Multi-domain amplification luck, focus, perseverance."},
+    35:{title:"Flow State",desc:"Multi-domain amplification: luck, focus, perseverance."},
     36:{title:"Immortality",desc:"No psychological damage taken. No critical failures possible."},
   };
 
